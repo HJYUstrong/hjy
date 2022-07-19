@@ -1,0 +1,225 @@
+#include<stdio.h>
+#include<conio.h>
+#include<windows.h>
+#include<process.h>
+#include<stdlib.h>
+#include<time.h>                       //引用头文件
+#include<bits/stdc++.h>
+using namespace std;
+enum Diriction{
+    UP,DOWN,LEFT,RIG};
+struct Snake{                              //定义蛇的节点
+    int x;
+    int y;
+    struct Snake *next;
+};                                      
+struct Serpent{
+    enum Diriction dir;                   //定义蛇的方向
+    int lenght;                           //定义蛇的长度
+};
+struct Food{
+    int a;
+    int b;
+};                                         //定义食物的坐标
+//全局变量，在全体函数都可以用的到的变量，在这只声明一次就可以了
+struct Snake *head,*tail;           //定义蛇头和蛇尾的指针，就相当于队列的头和尾,head是队头，tail是队尾
+struct Food *food;                         //定义食物
+struct Serpent *serpent;                   //定义蛇的方向和长度
+int getit=0;                               //判断是否得分，若是则可投放食物
+//声明以下可用到的函数
+void Gotoxy();                                  //定位光标
+void Initsnake();                          //初始化蛇
+void Home();                                     //绘制边框
+void Initfood();                           //投放食物
+void Keyhit();                                    //键盘控制        
+void Move();                                   //蛇身的移动
+void Addtail(int x, int y);                   //增加队尾长度
+void clearhead();                             //清除上次的队头
+void Print();     
+void Welcome () ;           //打印画面
+int main()
+{
+	system("color f5");
+    Initsnake();               //初始化蛇
+    while(1)           
+    {
+        Keyhit();                //键盘输入
+        Move();                  //移动
+        system("cls");
+        Print();                 //打印
+        Sleep(100);              //每隔100毫秒刷新游戏界面             
+    };
+    return 0;
+}
+void Welcome ()  //欢迎 
+ {
+ 	cout<<"\n\n\n\n\n\t\t\t 欢迎进入贪吃蛇游戏!"<<endl;//欢迎界面;
+ 
+    cout<<"\n\n\n\t\t\t 按任意键马上开始。。。"<<endl;//准备开始;
+    system("pause");  //暂停
+	system("cls");    //清屏 
+ }
+void Gotoxy(int x, int y)                 //定位光标,网上搜的
+{ 
+    COORD pos; 
+    pos.X = x - 1; 
+    pos.Y = y - 1;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),pos); 
+}
+void Initsnake()
+{
+    int i;
+    head=tail=(struct Snake*)malloc(sizeof(struct Snake));     //初始化队列   
+    food=(struct Food*)malloc(sizeof(struct Food));                   
+    serpent=(struct Serpent*)malloc(sizeof(struct Snake));       //为全局变量开辟内存
+    head->next=NULL;
+    serpent->dir=RIG;
+    serpent->lenght=4;
+    for(i=0;i<serpent->lenght;i++)
+        Addtail(10+i,10);
+    Initfood();                                            //初始化食物
+}
+void Home()
+{
+    int a;                                 
+    for(a=0;a<31;a++)                             //30*16
+        printf("%c", 3);
+    printf("\n");
+    for(a=0;a<16;a++)
+        printf("%c                             %c\n",3,3);
+    for(a=0;a<31;a++)
+        printf("%c", 3);                                //直接打印边框
+}
+void Initfood()            
+{
+    int m=1;
+    getit=0;
+    struct Snake *q=head;                        //将蛇头附给指针q
+    srand((unsigned)time(NULL));        //以时间为种子产生随机数
+    food->a=rand()%(30-2)+2;                         //这是随机数,并限制了食物的出现范围
+    food->b=rand()%(15-2)+2;
+    while(q!=tail)                              //遍历蛇，判断是否食物是否在蛇身上??
+    {
+        if(q->x==food->a &&q->y==food->b)     //蛇身上rice=0,食物无效
+            {
+                m=0;
+               break;}
+        q=q->next;
+    }
+    if(m==0)
+        Initfood();                                 //食物无效，隐含rice==0,又调用一次                            
+}
+void Keyhit()
+{
+    char n;
+    if(_kbhit())                                //无阻隔输入
+    {
+        n=_getch();                 //警告    1   warning C4996: 'getch': The POSIX name for this item is deprecated.
+        switch(n)
+        {
+        case 'w':
+            {
+            if(serpent->dir==DOWN)   //判断输入方向与蛇的方向是否相同，是则输入无效
+                         break;
+            else
+                serpent->dir=UP;break;
+             }
+        case 's':
+            {
+                if(serpent->dir==UP)
+                    break;
+                else
+                    serpent->dir=DOWN;break;
+            }
+        case 'a':
+            {
+                if(serpent->dir==RIG)
+                    break;
+                else
+                    serpent->dir=LEFT;break;
+            }
+        case 'd':
+            {
+                if(serpent->dir==LEFT)
+                    break;
+                else
+                    serpent->dir=RIG;break;
+            }
+        }
+    }
+}
+void Move()
+{
+
+    int a=0;
+    struct Snake *p;
+    struct Snake *q;
+    p=tail;                                      //将队尾附给p
+    switch(serpent->dir)
+    {
+    case UP:
+            Addtail(p->x,p->y-1);break;
+            //添加队尾
+    case DOWN:
+            Addtail(p->x,p->y+1);break;
+    case LEFT:
+            Addtail(p->x-1,p->y);break;
+    case RIG:             
+            Addtail(p->x+1,p->y);break;
+    } 
+    if(tail->x==food->a &&tail->y==food->b)        //吃到食物
+    {
+        serpent->lenght++;                //记分
+        getit=1;
+
+    }
+    if(getit!=1)                             //如果没吃到食物清除队尾
+        clearhead();
+    p=tail;
+    q=head;                             
+    while(q!=tail)                              //判断是否撞到自己
+    {
+        if(q->x==p->x &&q->y==p->y)            
+            exit(0);
+        q=q->next;
+    }
+
+    if(tail->x>30 || tail->y>17||tail->x<=1 ||tail->y<=1)       //超边框退出
+        exit(0);
+}
+void Addtail(int x,int y)                 //压入队
+{
+    struct Snake *newnode=(struct Snake*)malloc(sizeof(struct Snake));
+    newnode->x=x;
+    newnode->y=y;
+    newnode->next=NULL;
+    tail->next=newnode;
+    tail=newnode;                 //将新的节点附给队尾
+}
+void clearhead()                                     //这是清除队尾
+{
+    struct Snake *p;
+    p=head;
+    p=p->next;
+    head=p;
+}
+void Print()                                   //打印画面
+{
+    Home();
+    Gotoxy(food->a,food->b);                   //打印食物
+    printf("%c", 4);
+    struct Snake *q;
+    q=head;
+    Gotoxy(tail->x,tail->y);
+    printf("%c",5);
+    while(q!=tail)                           //打印蛇
+    {
+        Gotoxy(q->x,q->y);
+        printf("%c",2);
+        q=q->next;
+    }
+    if(getit==1)                              //判断食物是否被吃
+        Initfood();
+    Gotoxy(30,20);
+    printf("score :%d", serpent->lenght-4); //分数
+}
